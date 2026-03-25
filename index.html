@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DOM Staff Directory</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 16px;
+        background: #f9f9fb;
+        color: #1e1e1e;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #2a4d8f;
+        color: #fff;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+      header .meta {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      section {
+        background: #fff;
+        border: 1px solid #d5d9df;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 14px;
+      }
+      section h2 {
+        margin-top: 0;
+      }
+      #domInspector p {
+        margin: 4px 0;
+      }
+      #staffTable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      #staffTable th,
+      #staffTable td {
+        border: 1px solid #ccc;
+        padding: 8px;
+      }
+      .row-active {
+        background-color: #e8f5e9;
+        border-left: 4px solid #43a047;
+      }
+      .row-inactive {
+        background-color: #ffebee;
+        border-left: 4px solid #e53935;
+      }
+      .highlighted {
+        background-color: #fff9c4 !important;
+      }
+      .status-badge {
+        font-weight: bold;
+        color: #2e7d32;
+      }
+      #log {
+        max-height: 250px;
+        overflow-y: auto;
+        background: #f2f2f2;
+        padding: 8px;
+        border: 1px solid #ccc;
+      }
+      #log p {
+        margin: 2px 0;
+        font-size: 0.9rem;
+      }
+      .inline-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        align-items: center;
+      }
+      .btn-group {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🏢 DOM Staff Directory</h1>
+      <div class="meta">
+        <button id="windowInfoBtn" type="button">Window Info</button>
+        <span id="mouseCoords">Mouse: x=0, y=0</span>
+        <span id="staffCount">Staff: 0 employees</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>📋 DOM Inspector Panel</h2>
+      <div id="domInspector">
+        <p>nodeType: <strong id="insNodeType">-</strong></p>
+        <p>nodeName: <strong id="insNodeName">-</strong></p>
+        <p>parentNode: <strong id="insParentName">-</strong></p>
+        <p>childNodes: <strong id="insChildCount">-</strong></p>
+        <p>textContent: <strong id="insText">-</strong></p>
+      </div>
+    </section>
+
+    <section>
+      <h2>➕ Add New Staff</h2>
+      <form
+        name="staffForm"
+        id="staffForm"
+        class="inline-grid"
+        autocomplete="off"
+      >
+        <input type="text" name="staffName" id="staffName" placeholder="Name" />
+        <select name="staffDept" id="staffDept">
+          <option value="">Select Department</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Design">Design</option>
+          <option value="Marketing">Marketing</option>
+          <option value="HR">HR</option>
+        </select>
+        <input type="text" name="staffRole" id="staffRole" placeholder="Role" />
+        <select name="staffStatus" id="staffStatus">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <button type="submit">Add Staff</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>🔍 Filter & Query Panel</h2>
+      <div class="btn-group">
+        <button id="countAllBtn" type="button">Count All Nodes</button>
+        <button id="countRowsBtn" type="button">Count Rows</button>
+        <button id="findEngineeringBtn" type="button">
+          Find Engineering Rows
+        </button>
+        <button id="findJBtn" type="button">Find Names Starting with J</button>
+        <button id="inspectChildrenBtn" type="button">
+          Inspect Table Children
+        </button>
+        <button id="countElementNodesBtn" type="button">
+          Count Element Nodes Only
+        </button>
+        <button id="highlightEngBtn" type="button">
+          Highlight Engineering
+        </button>
+        <button id="resetStylesBtn" type="button">Reset Styles</button>
+      </div>
+      <div class="inline-grid" style="margin-top: 10px">
+        <div>
+          <input
+            type="text"
+            id="classSelectorInput"
+            placeholder="Class name"
+          /><button id="classSelectorBtn" type="button">Select by Class</button>
+        </div>
+        <div>
+          <input type="text" id="idSelectorInput" placeholder="ID" /><button
+            id="idSelectorBtn"
+            type="button"
+          >
+            Find by ID
+          </button>
+        </div>
+        <div>
+          <input
+            type="text"
+            id="customSelectorInput"
+            placeholder="Custom CSS selector"
+          /><button id="runSelectorBtn" type="button">Run Selector</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="textDemo">
+      <h2>🔤 Text Node Demo</h2>
+      <div id="text-demo">
+        Staff Count: <strong>hidden</strong
+        ><span style="display: none">secret text</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>📊 Staff Table</h2>
+      <div class="btn-group" style="margin-bottom: 8px">
+        <button id="sortByNameBtn" type="button">Sort by Name</button>
+        <button id="exportTableBtn" type="button">Export Table</button>
+        <button id="countRowsRefreshBtn" type="button">
+          Count Rows (live/static)
+        </button>
+      </div>
+      <table id="staffTable" border="1">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="staffBody"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>👁️ Staff Preview Card</h2>
+      <div
+        id="preview"
+        style="min-height: 120px; border: 1px dashed #999; padding: 8px"
+      ></div>
+    </section>
+
+    <section>
+      <h2>📝 Activity Log</h2>
+      <button id="removeLogListenerBtn" type="button">
+        Remove Log Listener
+      </button>
+      <div id="log"></div>
+    </section>
+
+    <script>
+      const NODE_TYPE_LABELS = {
+        1: "ELEMENT_NODE",
+        3: "TEXT_NODE",
+        8: "COMMENT_NODE",
+        9: "DOCUMENT_NODE",
+        11: "DOCUMENT_FRAGMENT_NODE",
+      };
+
+      const initialStaff = [
+        {
+          name: "Budi Santoso",
+          department: "Engineering",
+          role: "Backend Developer",
+          status: "active",
+        },
+        {
+          name: "Siti Rahayu",
+          department: "Design",
+          role: "UI/UX Designer",
+          status: "active",
+        },
+        {
+          name: "Joko Widodo",
+          department: "Marketing",
+          role: "Marketing Manager",
+          status: "inactive",
+        },
+      ];
+
+      const logPanel = document.getElementById("log");
+      const staffBody = document.getElementById("staffBody");
+      const staffTable = document.getElementById("staffTable");
+      const staffCountLabel = document.getElementById("staffCount");
+      const mouseCoords = document.getElementById("mouseCoords");
+      const domInspector = {
+        nodeType: document.getElementById("insNodeType"),
+        nodeName: document.getElementById("insNodeName"),
+        parentName: document.getElementById("insParentName"),
+        childCount: document.getElementById("insChildCount"),
+        text: document.getElementById("insText"),
+      };
+
+      let nextId = 1;
+      let logClickHandler = function (event) {
+        addLog("[Log Click] Activity log was clicked");
+      };
+
+      function addLog(message) {
+        const p = document.createElement("p");
+        p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logPanel.appendChild(p);
+        logPanel.scrollTop = logPanel.scrollHeight;
+      }
+
+      function updateStaffCount() {
+        const count = staffBody.rows.length;
+        staffCountLabel.textContent = `Staff: ${count} employee${count === 1 ? "" : "s"}`;
+      }
+
+      function setRowStyle(row, status) {
+        if (status === "active") {
+          row.classList.add("row-active");
+          row.classList.remove("row-inactive");
+          row.style.backgroundColor = "#e8f5e9";
+          row.style.borderLeft = "4px solid #43a047";
+        } else {
+          row.classList.add("row-inactive");
+          row.classList.remove("row-active");
+          row.style.backgroundColor = "#ffebee";
+          row.style.borderLeft = "4px solid #e53935";
+        }
+      }
+
+      function createStaffRow({ name, department, role, status }) {
+        const row = staffTable.insertRow(-1);
+        const dataIdAttr = document.createAttribute("data-id");
+        dataIdAttr.value = String(nextId);
+        row.setAttributeNode(dataIdAttr);
+        row.setAttribute("data-department", department);
+        row.setAttribute("data-status", status);
+        row.id = `row-${nextId}`;
+
+        row.insertCell(-1).textContent = String(nextId);
+        const nameCell = row.insertCell(-1);
+        nameCell.textContent = name;
+        nameCell.setAttribute("data-name", name);
+        row.insertCell(-1).textContent = department;
+        row.insertCell(-1).textContent = role;
+        row.insertCell(-1).textContent = status;
+
+        const actionCell = row.insertCell(-1);
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.textContent = "Edit";
+        editBtn.className = "edit-btn";
+        editBtn.onclick = function () {
+          const existingInput = nameCell.querySelector("input");
+          if (existingInput) return;
+          nameCell.innerHTML = `<input type=\"text\" value=\"${nameCell.textContent}\" />`;
+          addLog(
+            `[innerHTML] Name cell of row #${row.getAttribute("data-id")} switched to input for editing`,
+          );
+        };
+
+        const saveBtn = document.createElement("button");
+        saveBtn.type = "button";
+        saveBtn.textContent = "Save";
+        saveBtn.className = "save-btn";
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.textContent = "Toggle Status";
+        toggleBtn.className = "toggle-btn";
+
+        const inspectAttrBtn = document.createElement("button");
+        inspectAttrBtn.type = "button";
+        inspectAttrBtn.textContent = "Inspect Attributes";
+        inspectAttrBtn.className = "inspect-attr-btn";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.className = "delete-btn";
+
+        actionCell.append(
+          editBtn,
+          saveBtn,
+          toggleBtn,
+          inspectAttrBtn,
+          deleteBtn,
+        );
+
+        setRowStyle(row, status);
+
+        const liveCount = staffBody.childNodes.length;
+        const staticCount = document.querySelectorAll("#staffBody tr").length;
+        addLog(`[Live NodeList] rows: ${liveCount}`);
+        addLog(`[Static Snapshot] rows: ${staticCount}`);
+
+        nextId += 1;
+        updateStaffCount();
+        return row;
+      }
+
+      function updateDOMInspector(node) {
+        domInspector.nodeType.textContent = `${node.nodeType} — ${NODE_TYPE_LABELS[node.nodeType] || "UNKNOWN"}`;
+        domInspector.nodeName.textContent = node.nodeName;
+        domInspector.parentName.textContent = node.parentNode
+          ? node.parentNode.nodeName
+          : "-";
+        domInspector.childCount.textContent = node.childNodes.length;
+        domInspector.text.textContent = node.textContent.trim();
+      }
+
+      function clearHighlighted(selector) {
+        document.querySelectorAll(selector).forEach((el) => {
+          el.classList.remove("highlighted");
+          el.style.backgroundColor = "";
+          el.style.outline = "";
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        addLog("DOM ready — initial data loaded");
+        addLog(`Document title: ${document.title}`);
+        addLog(`Document URL: ${document.URL}`);
+        addLog(`Document domain: ${document.domain}`);
+        addLog(`Document readyState: ${document.readyState}`);
+        addLog(`Document body nodeName: ${document.body.nodeName}`);
+
+        initialStaff.forEach((item) => createStaffRow(item));
+
+        const textDemo = document.getElementById("text-demo");
+        addLog(`[textContent] #text-demo = "${textDemo.textContent.trim()}"`);
+        addLog(`[innerText] #text-demo = "${textDemo.innerText.trim()}"`);
+      });
+
+      document.getElementById("windowInfoBtn").addEventListener("click", () => {
+        window.alert(
+          `Screen: ${window.screen.width} x ${window.screen.height}\nInner: ${window.innerWidth} x ${window.innerHeight}\nLocation: ${window.location.href}`,
+        );
+      });
+
+      document
+        .getElementById("staffName")
+        .addEventListener("keyup", (event) => {
+          addLog(
+            `[KeyboardEvent] key: "${event.key}" | keyCode: ${event.keyCode} | target: ${event.target.id}`,
+          );
+        });
+
+      document
+        .getElementById("staffDept")
+        .addEventListener("change", (event) => {
+          addLog(`Department changed to: ${event.target.value}`);
+        });
+
+      document
+        .getElementById("staffForm")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          const form = document.forms["staffForm"];
+          const nameInput = form["staffName"];
+          const deptInput = form["staffDept"];
+          const roleInput = form["staffRole"];
+          const statusInput = form["staffStatus"];
+
+          let valid = true;
+          [nameInput, deptInput, roleInput].forEach((input) => {
+            input.style.borderColor = "";
+            if (!input.value.trim()) {
+              valid = false;
+              input.style.borderColor = "red";
+            }
+          });
+
+          if (!valid) {
+            addLog("[WARN] Form validation failed — empty fields");
+            return;
+          }
+
+          createStaffRow({
+            name: nameInput.value.trim(),
+            department: deptInput.value,
+            role: roleInput.value.trim(),
+            status: statusInput.value,
+          });
+
+          form.reset();
+          form["staffDept"].selectedIndex = 0;
+        });
+
+      staffBody.addEventListener("click", (event) => {
+        const target = event.target;
+        const row = target.closest("tr");
+        if (!row) return;
+
+        if (target.classList.contains("delete-btn")) {
+          const id = row.getAttribute("data-id");
+          const rowIndex = row.rowIndex;
+          // Node.removeChild and HTMLTableElement.deleteRow both demonstrated.
+          if (row.parentNode) {
+            row.parentNode.removeChild(row); // Node.removeChild()
+          }
+          if (typeof rowIndex === "number") {
+            staffTable.deleteRow(rowIndex); // HTMLTableElement.deleteRow()
+          }
+          updateStaffCount();
+          addLog(`Deleted row id=${id}`);
+          return;
+        }
+
+        if (target.classList.contains("toggle-btn")) {
+          const currentStatus = row.getAttribute("data-status");
+          const nextStatus = currentStatus === "active" ? "inactive" : "active";
+          row.setAttribute("data-status", nextStatus);
+          row.cells[4].textContent = nextStatus;
+          setRowStyle(row, nextStatus);
+          addLog(
+            `Toggled status for row #${row.getAttribute("data-id")} to ${nextStatus}`,
+          );
+          return;
+        }
+
+        if (target.classList.contains("inspect-attr-btn")) {
+          const attributes = row.attributes;
+          addLog(`[Attributes of row #${row.getAttribute("data-id")}]`);
+          for (let i = 0; i < attributes.length; i += 1) {
+            const attr = attributes[i];
+            addLog(`${attr.name} = ${attr.value}`);
+          }
+          return;
+        }
+
+        if (target.classList.contains("save-btn")) {
+          const nameCell = row.cells[1];
+          const input = nameCell.querySelector("input");
+          if (input) {
+            const newName = input.value.trim() || "Unnamed";
+            nameCell.textContent = newName;
+            nameCell.setAttribute("data-name", newName);
+            addLog(
+              `Saved name in row #${row.getAttribute("data-id")} as ${newName}`,
+            );
+          }
+          return;
+        }
+
+        if (target.tagName === "TD") {
+          updateDOMInspector(target);
+        }
+
+        if (!target.closest("button")) {
+          const preview = document.getElementById("preview");
+          const nameValue = row.cells[1].textContent;
+          const deptValue = row.cells[2].textContent;
+          const roleValue = row.cells[3].textContent;
+          const statusValue = row.cells[4].textContent;
+          preview.innerHTML = `<h3>${nameValue}</h3><p><strong>Department:</strong> ${deptValue}</p><p><strong>Role:</strong> ${roleValue}</p><p class=\"status-badge\">● ${statusValue}</p>`;
+          addLog(`Previewing row #${row.getAttribute("data-id")}`);
+        }
+      });
+
+      document.getElementById("countAllBtn").addEventListener("click", () => {
+        const nodes = document.querySelectorAll("*").length;
+        addLog(`Universal selector count: ${nodes}`);
+      });
+
+      function logRowCounts() {
+        const liveCount = staffBody.childNodes.length;
+        const staticCount = document.querySelectorAll("#staffBody tr").length;
+        addLog(`[Live NodeList] rows: ${liveCount}`);
+        addLog(`[Static Snapshot] rows: ${staticCount}`);
+      }
+
+      document.getElementById("countRowsBtn").addEventListener("click", () => {
+        addLog(
+          `Type selector count: ${document.querySelectorAll("tr").length}`,
+        );
+      });
+
+      document
+        .getElementById("countRowsRefreshBtn")
+        .addEventListener("click", logRowCounts);
+
+      document
+        .getElementById("classSelectorBtn")
+        .addEventListener("click", () => {
+          const className = document
+            .getElementById("classSelectorInput")
+            .value.trim();
+          if (!className) return;
+          clearHighlighted(".highlighted");
+          document.querySelectorAll(`.${className}`).forEach((el) => {
+            el.style.backgroundColor = "#fff176";
+            el.classList.add("highlighted");
+          });
+          setTimeout(() => clearHighlighted(".highlighted"), 2000);
+          addLog(`Class selector .${className} applied`);
+        });
+
+      document.getElementById("idSelectorBtn").addEventListener("click", () => {
+        const idValue = document.getElementById("idSelectorInput").value.trim();
+        if (!idValue) return;
+        clearHighlighted(".highlighted");
+        const target = document.querySelector(`#${idValue}`);
+        if (target) {
+          target.style.outline = "2px dashed #ff9800";
+          target.classList.add("highlighted");
+          setTimeout(() => {
+            target.style.outline = "";
+            target.classList.remove("highlighted");
+          }, 2000);
+          addLog(`Element #${idValue} found`);
+        } else {
+          addLog(`Element #${idValue} not found`);
+        }
+      });
+
+      document
+        .getElementById("runSelectorBtn")
+        .addEventListener("click", () => {
+          const sel = document
+            .getElementById("customSelectorInput")
+            .value.trim();
+          if (!sel) return;
+          try {
+            const nodes = document.querySelectorAll(sel);
+            addLog(`Custom selector "${sel}" matched ${nodes.length} elements`);
+          } catch (error) {
+            addLog(`Invalid selector: ${error.message}`);
+          }
+        });
+
+      document
+        .getElementById("findEngineeringBtn")
+        .addEventListener("click", () => {
+          const rows = document.querySelectorAll(
+            "tr[data-department='Engineering']",
+          );
+          clearHighlighted(".highlighted");
+          rows.forEach((row) => {
+            row.style.backgroundColor = "#bbdefb";
+            row.classList.add("highlighted");
+          });
+          setTimeout(() => clearHighlighted(".highlighted"), 2000);
+          addLog(`Found Engineering rows: ${rows.length}`);
+        });
+
+      document.getElementById("findJBtn").addEventListener("click", () => {
+        const cells = document.querySelectorAll("td[data-name^='J']");
+        clearHighlighted(".highlighted");
+        cells.forEach((cell) => {
+          cell.style.backgroundColor = "#dcedc8";
+          cell.classList.add("highlighted");
+        });
+        setTimeout(() => clearHighlighted(".highlighted"), 2000);
+        addLog(`Found names start with J: ${cells.length}`);
+      });
+
+      document
+        .getElementById("highlightEngBtn")
+        .addEventListener("click", () => {
+          setTimeout(() => {
+            document
+              .querySelectorAll("tr[data-department='Engineering']")
+              .forEach((row) => {
+                row.style.fontWeight = "bold";
+                row.style.color = "#1565c0";
+              });
+            addLog("Highlight Engineering button added styles after delay");
+          }, 2000);
+        });
+
+      document
+        .getElementById("resetStylesBtn")
+        .addEventListener("click", () => {
+          document.querySelectorAll("#staffBody tr").forEach((row) => {
+            row.style.cssText = "";
+            setRowStyle(row, row.getAttribute("data-status"));
+          });
+          addLog("Reset all inline styles");
+        });
+
+      document.getElementById("sortByNameBtn").addEventListener("click", () => {
+        const rows = Array.from(staffBody.rows);
+        rows.sort((a, b) =>
+          a.cells[1].textContent.localeCompare(b.cells[1].textContent),
+        );
+        rows.forEach((r) => staffBody.appendChild(r));
+        addLog("Sorted rows by Name");
+      });
+
+      document
+        .getElementById("exportTableBtn")
+        .addEventListener("click", () => {
+          const rows = Array.from(staffBody.rows);
+          const lines = rows.map((row) => {
+            const values = Array.from(row.cells)
+              .slice(0, 5)
+              .map((cell) => cell.textContent);
+            return values.join(" | ");
+          });
+          addLog("Export Table:\n" + lines.join("\n"));
+        });
+
+      document
+        .getElementById("inspectChildrenBtn")
+        .addEventListener("click", () => {
+          const nodes = Array.from(staffBody.childNodes);
+          nodes.forEach((node) => {
+            addLog(
+              `child nodeType=${node.nodeType} (${NODE_TYPE_LABELS[node.nodeType] || "UNKNOWN"}) nodeName=${node.nodeName}`,
+            );
+          });
+        });
+
+      document
+        .getElementById("countElementNodesBtn")
+        .addEventListener("click", () => {
+          const elementNodes = Array.from(staffBody.childNodes).filter(
+            (node) => node.nodeType === Node.ELEMENT_NODE,
+          );
+          addLog(`Element-node-only count: ${elementNodes.length}`);
+        });
+
+      document
+        .getElementById("removeLogListenerBtn")
+        .addEventListener("click", () => {
+          logPanel.removeEventListener("click", logClickHandler);
+          addLog("Removed click listener from Activity Log");
+        });
+
+      logPanel.addEventListener("click", logClickHandler);
+
+      document
+        .querySelector("header")
+        .addEventListener("mousemove", (event) => {
+          mouseCoords.textContent = `Mouse: x=${event.clientX}, y=${event.clientY}`;
+        });
+    </script>
+  </body>
+</html>
